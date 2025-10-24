@@ -73,9 +73,80 @@ class Mesa:
             return True
         return False
     
-        def __str__(self):
+    def __str__(self):
             return f"Mesa {self.numero} - Cap: {self.capacidad} - {self.__estado}"
     
+class Pedido:
+    contador = 0
+
+    def __init__(self, cliente, mesa):
+        Pedido.contador += 1
+        self.numero = Pedido.contador
+        self.cliente = cliente
+        self.mesa = mesa
+        self.__platos = []
+        self.__estado = "nuevo"
+        self.__subtotal = 0.0
+        self.__descuento = 0.0
+        self.__propina = 0.0
+
+    def agregar_plato(self, plato, cantidad=1):
+        if self.__estado in ["nuevo", "en_preparacion"]:
+            self.__platos.extend([plato] * cantidad)
+            self.__subtotal = sum(p.precio for p in self.__platos)
+            return True
+        return False
     
+    def enviar_cocina(self, inventario):
+        if self.__estado == "nuevo" and self.__platos:
+            if all(inventario.verificar(p.ingredientes) for p in self.__platos):
+                self.__estado = "en preparacion"
+                for p in self.__platos:
+                    inventario.descontar(p.ingredientes)
+                print(f"Pedido #{self.numero} en cocina")
+                return True
+            return False
+        
+    def marcar_listo(self):
+        if self.__estado == "en_preparacion":
+            self.__estado = "listo"
+
+    def servir(self):
+        if self.__estado == "listo":
+            self.__estado = "servido"
+
+    def pagar(self, propina=0.0):
+        if self.__estado == "servido":
+            self.__propina = propina
+            self.__estado = "pagado"
+            self.cliente.agregar_pedido(self)
+            return self.__subtotal - self.__descuento + self.__propina
+        return 0
+    
+    def aplicar_descuento(self, porcentaje):
+        if 0 <= porcentaje <= 50:
+            self.__descuento = self.__subtotal * (porcentaje / 100)
+            return True
+        return False
+    
+    def obtener_total(self):
+        return self.__subtotal - self.__descuento + self.__propina
+    
+    def ticket(self):
+        t = f"\n{'='*40}\n SABORES DEL MUNDO\n{'='*40}\n"
+        t += f"Pedido #{self.numero} - Mesa {self.mesa.numero}\n"
+        t += f"Cliente: {self.cliente.nombre}\n{'='*40}\n"
+        for i, p in enumerate(self.__platos, 1):
+            t += f"{i}. {p.nombre} ${p.precio:.2f}\n"
+        t += f"{'='*40}\n"
+        t += f"Subtotal: ${self.__subtotal:.2f}\n"
+        if self.__descuento > 0:
+            t += f"Descuento: -${self.__descuento:.2f}\n"
+        if self.__propina > 0:
+            t += f"Propina: ${self.propina:.2f}\n"
+        t += f"{'='*40}\nTOTAL: ${self.obtener_total():.2f}\n{'='*40}\n"
+        return t
+    
+
 
         
