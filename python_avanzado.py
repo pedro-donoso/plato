@@ -147,6 +147,31 @@ class Pedido:
         t += f"{'='*40}\nTOTAL: ${self.obtener_total():.2f}\n{'='*40}\n"
         return t
     
+class Reserva:
+    def __init__(self, cliente, fecha, hora, personas):
+        self.cliente = cliente
+        self.fecha = fecha
+        self.hora = hora
+        self.personas = personas
+        self.__mesa = None
+        self.__estado = "pendiente"
+
+    def realizar(self, sistema):
+        mesa = sistema.buscar_mesa(self.personas)
+        if mesa:
+            mesa.reservar()
+            self.__mesa = mesa
+            self.__estado = "confirmada"
+            print(f"Reserva OK - Mesa {mesa.numero}")
+            return True
+        print("Sin mesas disponibles")
+        return False
+    
+    def cancelar(self):
+        if self.__mesa and self.__estado == "confirmada":
+            self.__mesa.liberar()
+            self.__estado = "cancelada"
+
 
 
         
